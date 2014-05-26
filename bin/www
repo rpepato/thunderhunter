@@ -74,7 +74,7 @@ setInterval(function(req, res) {
       },
       function(filename, callback) {
         console.log("Step 2: Downloading data for " + filename);
-        callback(null, request.get(filename).auth(user_name, user_pwd));
+        callback(null, request.get(filename).auth(user, pwd));
       },
       function(zippedStream, callback) {
         console.log("Step 3: Unzipping stream");

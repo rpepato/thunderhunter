@@ -1,0 +1,112 @@
+#!/usr/bin/env node
+var debug = require('debug')('thunderhunter');
+var app = require('../app');
+const
+  request = require("request"),
+  moment = require("moment"),
+  zlib = require('zlib'),
+  geojson = require('geojson'),
+  async = require('async'), 
+  url = 'http://www.zeus.iag.usp.br/ftp/data',
+  user = 'user_name', 
+  pwd = 'user_pwd';
+
+app.set('port', process.env.PORT || 3000);
+
+var server = app.listen(app.get('port'), function() {
+  debug('Express server listening on port ' + server.address().port);
+});
+
+var io = require('socket.io').listen(server);
+
+function lineToObject(data) {
+    var item = data.split(/\s+/);
+    return {
+      year: item[0],
+      month: item[1],
+      day: item[2],
+      utc_hour: item[3],
+      minute: item[4],
+      second: item[5],
+      millisecond: item[6],
+      latitude: parseFloat(item[7]),
+      longitude: parseFloat(item[8]),
+      major_elipse_error: item[9],
+      atd_error: item[10],
+      quality_control: item[11],
+      polarity: item[12],
+      number_of_empolyed_rx: item[13],
+      number_of_atds_pairs: item[14],
+      rx_1: item[15],
+      rx_2: item[16],
+      rx_3: item[17],
+      rx_4: item[18],
+      rx_5: item[19],
+      rx_6: item[20],
+      rx_7: item[21],
+      rx_8: item[22],
+      rx_9: item[23],
+      rx_10: item[24],
+      rx_11: item[25],
+      rx_12: item[26],
+      rx_13: item[27],
+      rx_14: item[28]
+    }
+  }
+
+setInterval(function(req, res) {
+      async.waterfall(
+    [
+      function(callback) {
+        console.log("Step 1: defining the file name");
+        var urlPrefix = url;
+        var now = moment().zone("-03:00");
+        var fileName = moment([now.year(), 
+                              now.month(), 
+                              now.date(),
+                              now.hour(), 
+                              now.minute() - (now.minute() % 5)]).format("HHmm") + ".dat.gz";
+        var urlFirstPart = now.format("YYYY") + '-' + now.format("MM");
+        var urlSecondPart = urlFirstPart + '-' + now.format("DD");
+        var urlThirdPart = urlSecondPart + '_' + fileName;
+        var url = urlPrefix + '/' + urlFirstPart + '/' + urlSecondPart + '/' + urlThirdPart;
+        callback(null, url);
+      },
+      function(filename, callback) {
+        console.log("Step 2: Downloading data for " + filename);
+        callback(null, request.get(filename).auth(user_name, user_pwd));
+      },
+      function(zippedStream, callback) {
+        console.log("Step 3: Unzipping stream");
+        var unzipStream = zippedStream.pipe(zlib.createGunzip()),
+        data = '';
+
+        unzipStream.on('data', function(buffer) {
+          data += buffer.toString();
+        });
+
+        unzipStream.on('end', function() {
+          callback(null, data);
+        });
+
+      },
+      function(rawData, callback) {
+        console.log("Step 4: Generating geojson");
+
+        var data = rawData.split("\n").filter(function (item) {
+          return item !== '';
+        }).map(lineToObject);
+
+        geojson.parse(data, {Point: ['latitude', 'longitude']}, function(parsed_geojson) {
+          callback(null, JSON.stringify(parsed_geojson));
+        });
+      },
+      function(geojson) {
+        io.sockets.emit('thunderdata', geojson);
+      }
+    ], 
+    function(err, caption) {
+      console.log(err);
+    }
+  );
+}, 1000 * 60);

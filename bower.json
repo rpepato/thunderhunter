@@ -1,0 +1,29 @@
+{
+  "name": "thunderhunter",
+  "version": "0.0.1",
+  "homepage": "https://github.com/rpepato/thunderhunter",
+  "authors": [
+    "rpepato <rpepato@gmail.com>"
+  ],
+  "description": "thunderhunter app",
+  "moduleType": [
+    "node"
+  ],
+  "keywords": [
+    "thunder",
+    "geo",
+    "maps"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "leaflet.markercluster": "~0.4.0"
+  }
+}

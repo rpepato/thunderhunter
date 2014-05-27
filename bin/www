@@ -8,8 +8,8 @@ const
   geojson = require('geojson'),
   async = require('async'), 
   url = 'http://www.zeus.iag.usp.br/ftp/data',
-  user = 'user_name', 
-  pwd = 'user_pwd';
+  user = process.env.USER_ID, 
+  pwd = process.env.USER_PWD;
 
 app.set('port', process.env.PORT || 3000);
 
@@ -69,8 +69,8 @@ setInterval(function(req, res) {
         var urlFirstPart = now.format("YYYY") + '-' + now.format("MM");
         var urlSecondPart = urlFirstPart + '-' + now.format("DD");
         var urlThirdPart = urlSecondPart + '_' + fileName;
-        var url = urlPrefix + '/' + urlFirstPart + '/' + urlSecondPart + '/' + urlThirdPart;
-        callback(null, url);
+        var formattedUrl = urlPrefix + '/' + urlFirstPart + '/' + urlSecondPart + '/' + urlThirdPart;
+        callback(null, formattedUrl);
       },
       function(filename, callback) {
         console.log("Step 2: Downloading data for " + filename);

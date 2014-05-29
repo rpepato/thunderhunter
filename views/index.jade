@@ -14,7 +14,6 @@ block content
     socket.on('thunderdata', function (data) {
       if (data) {
         var geojson = JSON.parse(data);
-        console.log(geojson);
         var geojsonLayer = L.geoJson(geojson.features);
         markers.clearLayers();
         markers.addLayer(geojsonLayer);

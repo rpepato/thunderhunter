@@ -24,6 +24,8 @@
     "tests"
   ],
   "dependencies": {
-    "leaflet.markercluster": "~0.4.0"
+    "leaflet.markercluster": "~0.4.0",
+    "jquery": "~2.1.1",
+    "momentjs": "~2.6.0"
   }
 }

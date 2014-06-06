@@ -1,21 +1,26 @@
 #!/usr/bin/env node
 var debug = require('debug')('thunderhunter');
 var app = require('../app');
-const
-  request = require("request"),
-  moment = require("moment"),
-  zlib = require('zlib'),
-  geojson = require('geojson'),
-  async = require('async'), 
-  url = 'http://www.zeus.iag.usp.br/ftp/data',
-  user = process.env.USER_ID, 
-  pwd = process.env.USER_PWD;
 
 app.set('port', process.env.PORT || 3000);
 
 var server = app.listen(app.get('port'), function() {
   debug('Express server listening on port ' + server.address().port);
 });
+
+const
+  request = require("request"),
+  moment = require("moment"),
+  zlib = require('zlib'),
+  geojson = require('geojson'),
+  async = require('async'), 
+  mongoClient = require('mongodb').MongoClient,
+  format = require('util').format,
+  url = 'http://www.zeus.iag.usp.br/ftp/data',
+  user = process.env.USER_ID, 
+  pwd = process.env.USER_PWD;
+
+
 
 var io = require('socket.io').listen(server);
 
@@ -54,9 +59,50 @@ function lineToObject(data) {
     }
   }
 
+
+var secondsUntillNextDownload = 60;
+
+function remoteTimer() {
+  var secondsUntillRefresh = 60;
+  var interval = setInterval(function() {
+    if (secondsUntillRefresh < 0) {
+      clearInterval(interval);
+    }
+    else {
+      io.sockets.emit('countdown', secondsUntillRefresh);
+      secondsUntillRefresh--;
+    }
+  }, 1000);
+}
+
+remoteTimer();
+
+var lastUpdate;
+var lastGeoJson;
+var lastFeatureCount;
+
+io.sockets.on('connection', function(client) {
+  console.log("client connected");
+  if (lastUpdate !== undefined) {
+    io.sockets.socket(client.id).emit("lastupdate", lastUpdate.unix());
+  }
+
+  if (lastGeoJson !== undefined) {
+    io.sockets.socket(client.id).emit('thunderdata', lastGeoJson);  
+  }
+
+  if (lastFeatureCount !== undefined) {
+    io.sockets.socket(client.id).emit('featurecount', lastFeatureCount);  
+  }
+});
+
 setInterval(function(req, res) {
       async.waterfall(
     [
+      function(callback) {
+        io.sockets.emit('changestatus', "updating...");
+        callback();
+      },
       function(callback) {
         console.log("Step 1: defining the file name");
         var urlPrefix = url;
@@ -74,9 +120,9 @@ setInterval(function(req, res) {
       },
       function(filename, callback) {
         console.log("Step 2: Downloading data for " + filename);
-        callback(null, request.get(filename).auth(user, pwd));
+        callback(null, filename, request.get(filename).auth(user, pwd));
       },
-      function(zippedStream, callback) {
+      function(filename, zippedStream, callback) {
         console.log("Step 3: Unzipping stream");
         var unzipStream = zippedStream.pipe(zlib.createGunzip()),
         data = '';
@@ -86,11 +132,11 @@ setInterval(function(req, res) {
         });
 
         unzipStream.on('end', function() {
-          callback(null, data);
+          callback(null, filename, data);
         });
 
       },
-      function(rawData, callback) {
+      function(filename, rawData, callback) {
         console.log("Step 4: Generating geojson");
 
         var data = rawData.split("\n").filter(function (item) {
@@ -98,15 +144,44 @@ setInterval(function(req, res) {
         }).map(lineToObject);
 
         geojson.parse(data, {Point: ['latitude', 'longitude']}, function(parsed_geojson) {
-          callback(null, JSON.stringify(parsed_geojson));
+          callback(null, filename, parsed_geojson);
         });
       },
-      function(geojson) {
+      function(filename, geojson, callback) {
+        console.log("Step 5: Saving data")
+        mongoClient.connect('mongodb://127.0.0.1:27017/thunderhunter', function(err, db) {
+          if (err) throw err;
+
+          var collection = db.collection('storm_data');
+          geojson.features.forEach(function(item) {
+            collection.insert({"filename": filename, 
+                               "latitude": item.latitude,
+                               "longitude": item.longitude,
+                               "geojson": item,
+                               "timestamp": new Date()}
+                             , function(err, docs) {
+                              
+                             });
+          });
+
+          db.close();
+          callback(null, geojson.features.length, JSON.stringify(geojson));
+        });
+      },
+      function(numberOfFeatures, geojson) {
+        console.log("Step 6: Emitting data on socket");
+        lastUpdate = moment().zone("-03:00");
+        lastGeoJson = geojson;
+        lastFeatureCount = numberOfFeatures;
         io.sockets.emit('thunderdata', geojson);
+        io.sockets.emit('lastupdate', lastUpdate.unix());
+        io.sockets.emit('featurecount', numberOfFeatures);
+        io.sockets.emit('changestatus', "waiting");
+        remoteTimer();
       }
     ], 
     function(err, caption) {
       console.log(err);
     }
   );
-}, 1000 * 60);
+}, 1000 * secondsUntillNextDownload);

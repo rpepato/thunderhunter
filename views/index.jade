@@ -2,23 +2,66 @@ extends layout
 
 block content
   #map.fullscreen
-  script(type="text/javascript").
-    var map = L.map('map').setView([-23.5489, -46.6388], 12);
-    var layer = L.tileLayer('http://{s}.tiles.mapbox.com/v3/rpepato.ibeo7dfj/{z}/{x}/{y}.png', {
-      attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
-      maxZoom: 18
-    }).addTo(map);
-    var markers = new L.MarkerClusterGroup();
+  #floatingdiv.transparentbackground
+    #countdown.
+      Time until next check:
+    #lastUpdate.
+      Last check:
+    #lastFeatureCount.
+      Last thunder count:
+    #status.
+      Current status: waiting   
 
-    var socket = io.connect();
-    socket.on('thunderdata', function (data) {
-      if (data) {
-        var geojson = JSON.parse(data);
-        var geojsonLayer = L.geoJson(geojson.features);
-        markers.clearLayers();
-        markers.addLayer(geojsonLayer);
-        map.fitBounds(markers.getBounds());
-      }
+  script(type="text/javascript").
+    $(document).ready(function() {
+
+      var map = L.map('map').setView([-23.5489, -46.6388], 12);
+      var layer = L.tileLayer('http://{s}.tiles.mapbox.com/v3/rpepato.ibeo7dfj/{z}/{x}/{y}.png', {
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        maxZoom: 18
+      }).addTo(map);
+      var markers = new L.MarkerClusterGroup();
+
+      var socket = io.connect();
+      socket.on('thunderdata', function (data) {
+        if (data) {
+          var geojson = JSON.parse(data);
+          var geojsonLayer = L.geoJson(geojson.features);
+          markers.clearLayers();
+          markers.addLayer(geojsonLayer);
+          map.fitBounds(markers.getBounds());
+        }
+      });
+
+      socket.on('countdown', function(data) {
+        if (data) {
+          var hours = parseInt((data / 60));
+          var minutes = parseInt((data % 60));
+          if (hours < 10) { hours = "0" + hours; }
+          if (minutes < 10) { minutes = "0" + minutes; }
+          $("#countdown").text("Time until next check: " + hours + ":" + minutes);
+        }
+      });
+
+      socket.on('lastupdate', function(data) {
+        if (data) {
+          $("#lastUpdate").text("Last check: " + moment.unix(data).format("DD/MM/YYYY HH:mm:ss"));
+        }
+      });
+
+      socket.on('featurecount', function(data) {
+        if (data) {
+          $("#lastFeatureCount").text("Last thunder count: " + data);
+        }
+      });
+
+      socket.on('changestatus', function(data) {
+        if (data) {
+          $("#status").text("Current status: " + data);
+        }
+      });
+
+      map.addLayer(markers);
     });
-    map.addLayer(markers);
+    
 

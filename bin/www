@@ -18,9 +18,8 @@ const
   format = require('util').format,
   url = 'http://www.zeus.iag.usp.br/ftp/data',
   user = process.env.USER_ID, 
-  pwd = process.env.USER_PWD;
-
-
+  pwd = process.env.USER_PWD,
+  mongo_host = process.env.MONGO_HOST;
 
 var io = require('socket.io').listen(server);
 
@@ -149,7 +148,7 @@ setInterval(function(req, res) {
       },
       function(filename, geojson, callback) {
         console.log("Step 5: Saving data")
-        mongoClient.connect('mongodb://127.0.0.1:27017/thunderhunter', function(err, db) {
+        mongoClient.connect('mongodb://' + mongo_host + '/thunderhunter', function(err, db) {
           if (err) throw err;
 
           var collection = db.collection('storm_data');

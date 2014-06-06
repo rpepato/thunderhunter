@@ -148,7 +148,7 @@ setInterval(function(req, res) {
       },
       function(filename, geojson, callback) {
         console.log("Step 5: Saving data")
-        mongoClient.connect('mongodb://' + mongo_host + '/thunderhunter', function(err, db) {
+        mongoClient.connect(mongo_host, function(err, db) {
           if (err) throw err;
 
           var collection = db.collection('storm_data');

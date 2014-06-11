@@ -40,3 +40,11 @@ a {
   -khtml-opacity: 0.65;        /* Safari 1.x */
   opacity: 0.65;               /* Good browsers */
 }
+
+#fork {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 0;
+  z-index: 2;
+}

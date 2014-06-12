@@ -30,7 +30,6 @@ block content
                                   minutes: parseInt(feature.properties.minute),
                                   seconds: parseInt(feature.properties.second)
                                   });
-          console.log(feature.properties.millisecond);
           layer.bindPopup("<b>Event Time (UTC): </b>" + eventDate.format("MM/DD/YYYY hh:mm:ss a") + "<br />" +
                           "<b>Major Ellipse Error: </b>" + feature.properties.major_elipse_error + " meters<br />" +
                           "<b>ATD Error: </b>" + feature.properties.atd_error + " microseconds<br />" + 

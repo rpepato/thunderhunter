@@ -14,9 +14,29 @@ block content
     #status.
       Current status: waiting   
 
-
   script(type="text/javascript").
+    function qualityControlDescription(qualityControl) {
+      return qualityControl == 0 ? "Good" :
+                  qualityControl == 1 ? "Questionable" : "Bad";
+    }
     $(document).ready(function() {
+
+      function makePopup(feature, layer) {
+        if (feature.properties) {
+          var eventDate = moment({year: parseInt(feature.properties.year),
+                                  month: parseInt(feature.properties.month) - 1,
+                                  day: parseInt(feature.properties.day),
+                                  hours: parseInt(feature.properties.utc_hour),
+                                  minutes: parseInt(feature.properties.minute),
+                                  seconds: parseInt(feature.properties.second)
+                                  });
+          console.log(feature.properties.millisecond);
+          layer.bindPopup("<b>Event Time (UTC): </b>" + eventDate.format("MM/DD/YYYY hh:mm:ss a") + "<br />" +
+                          "<b>Major Ellipse Error: </b>" + feature.properties.major_elipse_error + " meters<br />" +
+                          "<b>ATD Error: </b>" + feature.properties.atd_error + " microseconds<br />" + 
+                          "<b>Quality Control: </b>" + qualityControlDescription(feature.properties.quality_control) + "<br />");
+        }
+      }
 
       var map = L.map('map').setView([-23.5489, -46.6388], 12);
       var layer = L.tileLayer('http://{s}.tiles.mapbox.com/v3/rpepato.ibeo7dfj/{z}/{x}/{y}.png', {
@@ -29,7 +49,9 @@ block content
       socket.on('thunderdata', function (data) {
         if (data) {
           var geojson = JSON.parse(data);
-          var geojsonLayer = L.geoJson(geojson.features);
+          var geojsonLayer = L.geoJson(geojson.features, {
+            onEachFeature: makePopup
+            });
           markers.clearLayers();
           markers.addLayer(geojsonLayer);
           map.fitBounds(markers.getBounds());

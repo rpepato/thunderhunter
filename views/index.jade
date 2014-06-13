@@ -16,8 +16,7 @@ block content
 
   script(type="text/javascript").
     function qualityControlDescription(qualityControl) {
-      return qualityControl == 0 ? "Good" :
-                  qualityControl == 1 ? "Questionable" : "Bad";
+      return ["Good", "Questionable", "Bad"][qualityControl];
     }
     $(document).ready(function() {
 

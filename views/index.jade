@@ -15,9 +15,6 @@ block content
       Current status: waiting   
 
   script(type="text/javascript").
-    function qualityControlDescription(qualityControl) {
-      return ["Good", "Questionable", "Bad"][qualityControl];
-    }
     $(document).ready(function() {
 
       function makePopup(feature, layer) {
@@ -32,7 +29,7 @@ block content
           layer.bindPopup("<b>Event Time (UTC): </b>" + eventDate.format("MM/DD/YYYY hh:mm:ss a") + "<br />" +
                           "<b>Major Ellipse Error: </b>" + feature.properties.major_elipse_error + " meters<br />" +
                           "<b>ATD Error: </b>" + feature.properties.atd_error + " microseconds<br />" + 
-                          "<b>Quality Control: </b>" + qualityControlDescription(feature.properties.quality_control) + "<br />");
+                          "<b>Quality Control: </b>" + (function(qualityControl) { return ["Good", "Questionable", "Bad"][qualityControl]; })(feature.properties.quality_control) + "<br />");
         }
       }
 

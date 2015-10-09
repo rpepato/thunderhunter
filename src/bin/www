@@ -13,11 +13,11 @@ const
   moment = require("moment"),
   zlib = require('zlib'),
   geojson = require('geojson'),
-  async = require('async'), 
+  async = require('async'),
   mongoClient = require('mongodb').MongoClient,
   format = require('util').format,
   url = 'http://www.zeus.iag.usp.br/ftp/data',
-  user = process.env.USER_ID, 
+  user = process.env.USER_ID,
   pwd = process.env.USER_PWD,
   mongo_host = process.env.MONGO_HOST;
 
@@ -87,11 +87,11 @@ io.sockets.on('connection', function(client) {
   }
 
   if (lastGeoJson !== undefined) {
-    io.sockets.socket(client.id).emit('thunderdata', lastGeoJson);  
+    io.sockets.socket(client.id).emit('thunderdata', lastGeoJson);
   }
 
   if (lastFeatureCount !== undefined) {
-    io.sockets.socket(client.id).emit('featurecount', lastFeatureCount);  
+    io.sockets.socket(client.id).emit('featurecount', lastFeatureCount);
   }
 });
 
@@ -106,10 +106,10 @@ setInterval(function(req, res) {
         console.log("Step 1: defining the file name");
         var urlPrefix = url;
         var now = moment().zone("-03:00");
-        var fileName = moment([now.year(), 
-                              now.month(), 
+        var fileName = moment([now.year(),
+                              now.month(),
                               now.date(),
-                              now.hour(), 
+                              now.hour(),
                               now.minute() - (now.minute() % 5)]).format("HHmm") + ".dat.gz";
         var urlFirstPart = now.format("YYYY") + '-' + now.format("MM");
         var urlSecondPart = urlFirstPart + '-' + now.format("DD");
@@ -153,13 +153,13 @@ setInterval(function(req, res) {
 
           var collection = db.collection('storm_data');
           geojson.features.forEach(function(item) {
-            collection.insert({"filename": filename, 
+            collection.insert({"filename": filename,
                                "latitude": item.latitude,
                                "longitude": item.longitude,
                                "geojson": item,
                                "timestamp": new Date()}
                              , function(err, docs) {
-                              
+
                              });
           });
 
@@ -178,7 +178,7 @@ setInterval(function(req, res) {
         io.sockets.emit('changestatus', "waiting");
         remoteTimer();
       }
-    ], 
+    ],
     function(err, caption) {
       console.log(err);
     }

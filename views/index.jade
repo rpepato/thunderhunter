@@ -33,7 +33,7 @@ block content
         }
       }
 
-      var map = L.map('map').setView([-23.5489, -46.6388], 12);
+      var map = L.map('map').setView([-23.5489, -46.6388], 1);
       var layer = L.tileLayer('http://{s}.tiles.mapbox.com/v3/rpepato.ibeo7dfj/{z}/{x}/{y}.png', {
         attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
         maxZoom: 18
@@ -84,4 +84,3 @@ block content
       map.addLayer(markers);
     });
     
-
